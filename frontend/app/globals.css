@@ -1,0 +1,560 @@
+/*
+ * 簡易POS — レジカウンターの道具として作る。
+ * 左に「操作の手順」、右に「レシート」。印象に残すのはレシートの紙だけにし、他は静かに保つ。
+ * 色の役割：青＝操作、緑＝店内、琥珀＝持ち帰り、赤＝エラー。色だけに意味を持たせず必ず文字を添える。
+ */
+:root {
+  --counter: #dce2e7;
+  --panel: #f3f5f7;
+  --paper: #ffffff;
+  --ink: #1c2430;
+  --muted: #566170;
+  --rule: #c5ced6;
+  --action: #24529c;
+  --action-strong: #1a3f7a;
+  --dine: #1d6b59;
+  --takeout: #9a5a0a;
+  --error: #a3262c;
+  --error-bg: #fbecec;
+  --warn-bg: #fff3d9;
+
+  --font: "BIZ UDPGothic", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI",
+    Meiryo, sans-serif;
+  --fs-small: 0.82rem;
+  --fs-base: 1rem;
+  --fs-lead: 1.18rem;
+  --fs-title: 1.5rem;
+  --fs-display: 2.6rem;
+
+  --radius-control: 8px;
+  --radius-paper: 2px;
+  --tap: 52px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 17px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--counter);
+  color: var(--ink);
+  font-family: var(--font);
+  line-height: 1.6;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--action);
+  outline-offset: 2px;
+}
+
+.loading {
+  padding: 3rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* ---------- ボタン ---------- */
+.btn {
+  min-height: var(--tap);
+  padding: 0 1.2rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-control);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:disabled {
+  cursor: not-allowed;
+  background: #e3e7eb;
+  border-color: #e3e7eb;
+  color: #8a94a0;
+}
+.btn-block {
+  width: 100%;
+}
+.btn-primary {
+  background: var(--action);
+  color: #fff;
+}
+.btn-primary:not(:disabled):hover {
+  background: var(--action-strong);
+}
+.btn-secondary {
+  background: var(--ink);
+  color: #fff;
+}
+.btn-outline {
+  background: transparent;
+  border-color: var(--ink);
+}
+.btn-quiet {
+  min-height: 40px;
+  background: transparent;
+  border-color: var(--rule);
+  font-weight: 400;
+}
+.link-button {
+  margin-left: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-small);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- 入力 ---------- */
+.field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.field-label {
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.input {
+  min-height: var(--tap);
+  width: 100%;
+  padding: 0 0.8rem;
+  border: 2px solid var(--rule);
+  border-radius: var(--radius-control);
+  background: #fff;
+}
+.input:focus {
+  border-color: var(--action);
+}
+.input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+.input-code {
+  font-size: var(--fs-lead);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.field-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.message {
+  margin: 0.5rem 0;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.message-error {
+  padding: 0.5rem 0.7rem;
+  border-left: 4px solid var(--error);
+  background: var(--error-bg);
+  color: var(--error);
+  font-weight: 700;
+}
+.message-warn {
+  padding: 0.5rem 0.7rem;
+  border-left: 4px solid var(--takeout);
+  background: var(--warn-bg);
+  color: var(--ink);
+}
+
+/* ---------- ログイン ---------- */
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 1.5rem;
+}
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: min(100%, 24rem);
+  padding: 2rem 1.75rem;
+  background: var(--paper);
+  border-top: 6px solid var(--action);
+  border-radius: var(--radius-paper);
+}
+.login-title {
+  margin: 0 0 0.25rem;
+  font-size: var(--fs-title);
+}
+
+/* ---------- POS 画面 ---------- */
+.pos {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.pos-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--ink);
+  color: #fff;
+}
+.pos-brand {
+  font-weight: 700;
+  font-size: var(--fs-lead);
+}
+.pos-cashier {
+  margin-left: auto;
+}
+.pos-header .btn-quiet {
+  border-color: #4a5566;
+  color: #fff;
+}
+
+.pos-main {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.pos-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.step {
+  padding: 1rem 1.15rem 1.15rem;
+  background: var(--panel);
+  border-radius: var(--radius-control);
+}
+.step-title {
+  margin: 0 0 0.6rem;
+  font-size: var(--fs-lead);
+}
+.step .btn-outline {
+  margin-top: 0.75rem;
+}
+.plain-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.plain-fieldset:disabled .lookup,
+.plain-fieldset:disabled .field-row {
+  opacity: 0.45;
+}
+
+.customer-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: #fff;
+  border: 2px solid var(--rule);
+  border-radius: var(--radius-control);
+}
+.customer-kind {
+  display: block;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.customer-name {
+  font-size: var(--fs-lead);
+  font-weight: 700;
+}
+
+/* 取引区分：色と文字の両方で区別する */
+.mode-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.mode {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 64px;
+  justify-content: center;
+  padding: 0.5rem 0.9rem;
+  background: #fff;
+  border: 2px solid var(--rule);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+.mode input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.mode-label {
+  font-weight: 700;
+  font-size: var(--fs-lead);
+}
+.mode-note {
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.mode:has(input:focus-visible) {
+  outline: 3px solid var(--action);
+  outline-offset: 2px;
+}
+.mode-dine_in:has(input:checked) {
+  background: var(--dine);
+  border-color: var(--dine);
+  color: #fff;
+}
+.mode-takeout:has(input:checked) {
+  background: var(--takeout);
+  border-color: var(--takeout);
+  color: #fff;
+}
+.mode:has(input:checked) .mode-note {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.lookup {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+.lookup-fields {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) 8.5rem;
+  gap: 0.75rem;
+  margin: 0;
+}
+.lookup-fields dt {
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.lookup-fields dd {
+  min-height: var(--tap);
+  margin: 0.2rem 0 0;
+  padding: 0.65rem 0.8rem;
+  background: #fff;
+  border-bottom: 2px solid var(--rule);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- レシート ---------- */
+.receipt {
+  align-self: start;
+  position: sticky;
+  top: 1.25rem;
+}
+.receipt-paper {
+  --edge: 7px;
+  display: flex;
+  flex-direction: column;
+  padding: 1.4rem 1.25rem 1.6rem;
+  background: var(--paper);
+  /* ミシン目（上下の縁をギザギザに切る） */
+  -webkit-mask:
+    radial-gradient(circle var(--edge) at 50% 0, #0000 98%, #000) 50% 0 / calc(var(--edge) * 2.6) 51% repeat-x,
+    radial-gradient(circle var(--edge) at 50% 100%, #0000 98%, #000) 50% 100% / calc(var(--edge) * 2.6) 51% repeat-x;
+  mask:
+    radial-gradient(circle var(--edge) at 50% 0, #0000 98%, #000) 50% 0 / calc(var(--edge) * 2.6) 51% repeat-x,
+    radial-gradient(circle var(--edge) at 50% 100%, #0000 98%, #000) 50% 100% / calc(var(--edge) * 2.6) 51% repeat-x;
+}
+.receipt-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px dashed var(--rule);
+}
+.receipt-title {
+  margin: 0;
+  font-size: var(--fs-lead);
+}
+.receipt-customer {
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.receipt-empty {
+  margin: 2.5rem 0;
+  text-align: center;
+  color: var(--muted);
+}
+.receipt-table {
+  width: 100%;
+  margin: 0.4rem 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.receipt-table th {
+  padding: 0.4rem 0.2rem;
+  font-size: var(--fs-small);
+  font-weight: 400;
+  color: var(--muted);
+  text-align: left;
+}
+.receipt-table td {
+  padding: 0.5rem 0.2rem;
+  border-top: 1px solid #eceff2;
+  vertical-align: middle;
+}
+.receipt-table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.item-name {
+  font-weight: 700;
+}
+.qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.qty-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+.qty-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.receipt-foot {
+  margin-top: 0.4rem;
+  padding-top: 0.8rem;
+  border-top: 2px dashed var(--rule);
+}
+.receipt-sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.receipt-sum-value {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.receipt-note {
+  margin: 0.2rem 0 0.6rem;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+.btn-confirm {
+  min-height: 64px;
+  margin-top: 0.4rem;
+  background: var(--action);
+  color: #fff;
+  font-size: var(--fs-lead);
+}
+.btn-confirm:not(:disabled):hover {
+  background: var(--action-strong);
+}
+
+/* ---------- 合計ポップアップ ---------- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(28, 36, 48, 0.55);
+}
+.dialog {
+  width: min(100%, 26rem);
+  padding: 1.6rem 1.6rem 1.4rem;
+  background: var(--paper);
+  border-top: 6px solid var(--action);
+  border-radius: var(--radius-paper);
+  animation: dialog-in 160ms ease-out;
+}
+.dialog-meta {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.dialog-title {
+  margin: 0.2rem 0 1rem;
+  font-size: var(--fs-title);
+}
+.dialog-amounts {
+  margin: 0 0 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.dialog-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.35rem 0;
+}
+.dialog-row dd {
+  margin: 0;
+  font-size: var(--fs-lead);
+}
+.dialog-total {
+  margin-top: 0.4rem;
+  padding-top: 0.7rem;
+  border-top: 2px solid var(--ink);
+}
+.dialog-total dt {
+  font-weight: 700;
+}
+.dialog-total dd {
+  font-size: var(--fs-display);
+  font-weight: 700;
+  line-height: 1.1;
+}
+@keyframes dialog-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog {
+    animation: none;
+  }
+}
+
+/* ---------- 縦長タブレット・スマートフォン ---------- */
+@media (max-width: 860px) {
+  .pos-main {
+    grid-template-columns: 1fr;
+    padding: 0.9rem;
+  }
+  .receipt {
+    position: static;
+  }
+  .pos-brand {
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .field-row,
+  .lookup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lookup-fields {
+    grid-template-columns: 1fr;
+  }
+}

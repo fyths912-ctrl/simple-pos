@@ -1,0 +1,42 @@
+# ローカル開発用（MySQL 8.0 + FastAPI + Next.js）
+#   docker compose up --build
+#   → http://localhost:3000 （担当者 C001 / パスワードは backend/scripts/seed.py の DEV_PASSWORD）
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass-dev}
+      MYSQL_DATABASE: pos_app
+      MYSQL_USER: pos
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-pospass-dev}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_bin"]
+    ports: ["3306:3306"]
+    volumes: [db-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-rootpass-dev}"]
+      interval: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: mysql+pymysql://pos:${MYSQL_PASSWORD:-pospass-dev}@db:3306/pos_app?charset=utf8mb4
+      COOKIE_SECURE: "false"   # http://localhost のため。本番は true
+    command: sh -c "alembic upgrade head && python -m scripts.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports: ["8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    environment:
+      API_PROXY_TARGET: http://backend:8000
+    command: sh -c "npm ci && npm run dev -- -H 0.0.0.0"
+    ports: ["3000:3000"]
+    volumes: [./frontend:/app, frontend-node-modules:/app/node_modules]
+    depends_on: [backend]
+
+volumes:
+  db-data:
+  frontend-node-modules:
