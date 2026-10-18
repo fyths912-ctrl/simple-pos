@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
-    "build": "next build && node scripts/csp-hashes.mjs",
-    "typecheck": "tsc --noEmit",
-    "test": "jest"
-  },
+  "dev": "next dev -p 3000",
+  "build": "next build && node scripts/csp-hashes.mjs",
+  "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
+  "typecheck": "tsc --noEmit",
+  "test": "jest"
+}
   "dependencies": {
     "next": "15.5.27",
     "react": "19.1.1",
