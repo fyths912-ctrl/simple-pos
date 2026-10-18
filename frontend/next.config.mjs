@@ -1,10 +1,13 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  output: "standalone",
   images: { unoptimized: true },
 
   async rewrites() {
-    const api = process.env.API_PROXY_TARGET ?? "http://localhost:8000";
+    const api =
+      process.env.API_PROXY_TARGET ??
+      "http://localhost:8000";
 
     return [
       {
