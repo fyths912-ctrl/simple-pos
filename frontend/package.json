@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
   "dev": "next dev -p 3000",
-  "build": "next build && node scripts/csp-hashes.mjs",
+  "build": "next build",
   "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
   "typecheck": "tsc --noEmit",
   "test": "jest"
