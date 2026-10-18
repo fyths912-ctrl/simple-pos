@@ -1,3 +1,4 @@
+import ssl
 """DB 接続プール（設計11.2／NF-004）。
 
 Engine はアプリ起動時（lifespan）に1つだけ生成し、全リクエストで使い回す。
@@ -12,9 +13,11 @@ SessionFactory = sessionmaker(autoflush=False, expire_on_commit=False)
 
 
 def build_engine(settings: Settings) -> Engine:
-    connect_args: dict = {}
-    if settings.db_ssl_ca:
-        connect_args["ssl"] = {"ca": settings.db_ssl_ca}  # Azure MySQL は TLS 必須
+connect_args: dict = {
+    "ssl": ssl.create_default_context(
+        cafile=settings.db_ssl_ca
+    )
+}  # Azure MySQL は TLS 必須
     return create_engine(
         settings.database_url,
         pool_size=settings.db_pool_size,
